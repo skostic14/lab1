@@ -30,12 +30,40 @@ ARCHITECTURE rtl OF timer_fsm IS
 
 TYPE   STATE_TYPE IS (IDLE, COUNT, STOP); -- stanja automata
 
-SIGNAL curent_state_r, next_state : STATE_TYPE; -- trenutno i naredno stanje automata
+SIGNAL current_state_r, next_state : STATE_TYPE; -- trenutno i naredno stanje automata
 
 BEGIN
 
 -- DODATI :
 -- automat sa konacnim brojem stanja koji upravlja brojanjem sekundi na osnovu stanja prekidaca
+	process(clk_i, rst_i) begin
+		if(rst_i = '1') then
+			current_state_r <= IDLE;
+		elsif(rising_edge(clk_i)) then
+			current_state_r <= next_state;
+		end if;
+	end process;
 
+	process(clk_i, rst_i) begin
+		if(rst_i = '1') then
+			next_state <= IDLE;
+		elsif(rising_edge(clk_i)) then
+			if(reset_switch_i = '1') then
+				next_state <= IDLE;
+				
+			elsif((current_state_r = IDLE and start_switch_i = '1') or (current_state_r = STOP and continue_switch_i = '1')) then
+				next_state <= COUNT;
+				
+			elsif(current_state_r = COUNT and stop_switch_i = '1') then
+				next_state <= STOP;
+			
+			else
+				next_state <= current_state_r;
+			end if;
+		end if;
+	end process;
+	
+	cnt_en_o <= '1' when current_state_r = COUNT else '0';
+	cnt_rst_o <= '1' when reset_switch_i ='1' else '0';
 
 END rtl;
